@@ -1,53 +1,81 @@
-import os
 from rag import RAGManager
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage, SystemMessage
+import os
 
-# Initialize the RAGManager with your OpenAI API key
 rag_manager = RAGManager(embedding_model_api_key=os.getenv("EMBED_API_KEY"))
 
 # Function to offer the user a choice of materials
 def offer_material_choice():
     return """
-    Hi! What would you like to learn today? Please choose one of the following:
-    1. Peristiwa Rengasdengklok
-    2. Peristiwa 10 Nopember
-    3. Konferensi Meja Bundar
+    Halo! Selamat datang di kelas sejarah! Apa yang mau kamu pelajari hari ini? Di kelas ini kami menyediakan beberapa topik, seperti:
+    - Peristiwa Rengasdengklok
+    - Peristiwa 10 Nopember
+    - Konferensi Meja Bundar
     """
 
-# Function to map user's choice to a material
 def get_material_choice(user_input):
-    choices = {
-        "1": "Peristiwa Rengasdengklok",
-        "2": "Peristiwa 10 Nopember",
-        "3": "Konferensi Meja Bundar"
-    }
-    return choices.get(user_input.strip(), None)  # Returns None if input is invalid
+    # normalisasi input ke lowercase
+    user_input = user_input.lower()
 
-# Main interaction flow
+    # pilihan yang memungkinkan
+    choices = {
+        "rengasdengklok": "Peristiwa Rengasdengklok",
+        "10 nopember": "Peristiwa 10 Nopember",
+        "konferensi meja bundar": "Konferensi Meja Bundar"
+    }
+
+    # mencari kecocokan dari pilihan
+    for keyword, material in choices.items():
+        if keyword in user_input:
+            return material
+    
+    # Return None jika tidak match
+    return None
+
+# Main Interaction
 def interact_with_user():
-    # Offer material choice to the user
     print(offer_material_choice())
     
-    # Simulate user input (replace this with actual input capture)
-    user_input = input("Your choice: ").strip()
+    user_input = input("Topik apa yang mau kamu pelajari? ").strip()
     
-    # Get the selected material
     material_choice = get_material_choice(user_input)
     
     if material_choice:
-        print(f"You chose to learn about {material_choice}.")
+        print(f"Kamu memilih untuk mempelajari tentang {material_choice}.")
         
-        # Simulate a query (replace this with actual question from user)
-        query = f"Tolong jelaskan tentang {material_choice}."
-        
-        # Query the selected material's FAISS vector store
-        retrieved_docs = rag_manager.query_faiss(material_choice, query)
-        
-        # Display the retrieved content
-        print("\nRelevant content retrieved:")
-        for doc in retrieved_docs:
-            print(doc.page_content)
+        while True:
+            query = input(f"Apa yang mau kamu tanyakan mengenai {material_choice}? (ketik 'exit' untuk keluar) ").strip()
+            
+            # Cek apakah user ingin keluar
+            if query.lower() in ["exit", "quit"]:
+                print("Terima kasih! Sampai jumpa lagi.")
+                break
+            
+            # Loading and querying FAISS
+            retrieved_docs = rag_manager.query_faiss(material_choice, query)
+            
+            # Menyiapkan kontext untuk llm
+            context = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            llm = ChatOpenAI(
+                api_key=os.getenv("LLM_API_KEY"),
+                model="gpt-4o-mini",
+                temperature=.7
+            )
+            
+            messages = [
+                SystemMessage(content="Kamu seorang guru sejarah. Jawablah pertanyaan yang diberikan sesuai konteks yang diberikan. Jawablah seringkas mungkin, namun jawaban terbatas pada maksimal 3 kalimat. Jika tidak ada data yang berkaitan dengan konteks di bawah, jawab dengan 'Saya tidak tahu'."),
+                HumanMessage(content=f"Pertanyaan: {query}\n\nKonteks:\n{context}")
+            ]
+            
+            response = llm.invoke(messages) 
+            
+            # Output
+            print(f"AI's Response: {response.content}")
     else:
-        print("Invalid choice. Please try again.")
+        print("Pilihan tidak valid. Silakan coba lagi.")
+
 
 # Run the interaction flow
 if __name__ == "__main__":

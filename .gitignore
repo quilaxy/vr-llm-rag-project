@@ -1,2 +1,4 @@
 .env
 venv
+.python-version
+rag.ipynb
