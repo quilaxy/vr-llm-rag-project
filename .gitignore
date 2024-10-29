@@ -1,4 +1,4 @@
 .env
 venv
-.python-version
-*.ipynb
+__pycache__/
+*.py[cod]
