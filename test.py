@@ -15,47 +15,67 @@
 
 # ------- test deepgram manual dari file audio ----------
 
-import os
-import asyncio
-from deepgram import Deepgram
+# import os
+# import asyncio
+# from deepgram import Deepgram
 
-# Load API key dari environment
-from dotenv import load_dotenv
-load_dotenv()
+# # Load API key dari environment
+# from dotenv import load_dotenv
+# load_dotenv()
 
-# Ambil API key Deepgram dari environment
-DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-if not DEEPGRAM_API_KEY:
-    raise ValueError("API Key Deepgram tidak ditemukan.")
+# # Ambil API key Deepgram dari environment
+# DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+# if not DEEPGRAM_API_KEY:
+#     raise ValueError("API Key Deepgram tidak ditemukan.")
 
-# Inisiasi Deepgram client
-deepgram = Deepgram(DEEPGRAM_API_KEY)
+# # Inisiasi Deepgram client
+# deepgram = Deepgram(DEEPGRAM_API_KEY)
 
-# Path ke file audio (pastikan file ini sudah ada)
-RECORDING_PATH = "audio/recording.wav"
+# # Path ke file audio (pastikan file ini sudah ada)
+# RECORDING_PATH = "audio/recording.wav"
 
-# Fungsi untuk mengirim file WAV ke Deepgram dan menampilkan respons lengkap
-async def test_deepgram(file_path):
-    try:
-        # Buka file audio yang akan ditranskripsi
-        with open(file_path, "rb") as audio:
-            source = {"buffer": audio, "mimetype": "audio/wav"}
+# # Fungsi untuk mengirim file WAV ke Deepgram dan menampilkan respons lengkap
+# async def test_deepgram(file_path):
+#     try:
+#         # Buka file audio yang akan ditranskripsi
+#         with open(file_path, "rb") as audio:
+#             source = {"buffer": audio, "mimetype": "audio/wav"}
 
-            # Panggil API Deepgram untuk melakukan transkripsi
-            response = await deepgram.transcription.prerecorded(source, {'language': 'id' })
+#             # Panggil API Deepgram untuk melakukan transkripsi
+#             response = await deepgram.transcription.prerecorded(source, {'language': 'id' })
 
-            # Cetak respons lengkap dari Deepgram untuk debugging
-            print(f"Deepgram Full Response: {response}")
+#             # Cetak respons lengkap dari Deepgram untuk debugging
+#             print(f"Deepgram Full Response: {response}")
 
-            # Ambil transkrip dari hasil Deepgram
-            transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
-            print(f"Hasil Transkripsi: {transcript}")
+#             # Ambil transkrip dari hasil Deepgram
+#             transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
+#             print(f"Hasil Transkripsi: {transcript}")
 
-    except Exception as e:
-        print(f"Terjadi kesalahan saat mengirim file ke Deepgram: {e}")
+#     except Exception as e:
+#         print(f"Terjadi kesalahan saat mengirim file ke Deepgram: {e}")
 
-# Main program untuk menjalankan fungsi di atas
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test_deepgram(RECORDING_PATH))
+# # Main program untuk menjalankan fungsi di atas
+# if __name__ == "__main__":
+#     loop = asyncio.get_event_loop()
+#     loop.run_until_complete(test_deepgram(RECORDING_PATH))
 
+
+
+# Untuk Mendapatkan VOICE ID
+
+# import requests
+# import json
+
+# XI_API_KEY = "sk_091ac77be74af7946e140f15dc3393e026172c75b2430166"
+# url = "https://api.elevenlabs.io/v1/voices"
+
+# headers = {
+#   "Accept": "application/json",
+#   "xi-api-key": XI_API_KEY
+# }
+
+# response = requests.get(url, headers=headers)
+# data = response.json()
+
+# for voice in data['voices']:
+#   print(f"{voice['name']}; {voice['voice_id']}")
