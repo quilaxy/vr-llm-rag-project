@@ -24,7 +24,7 @@ deepgram = Deepgram(DEEPGRAM_API_KEY)
 mixer.init()
 
 # Inisialisasi Google Text-to-Speech Client
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service_tts.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"
 google_tts_client = texttospeech.TextToSpeechClient()
 
 # Inisialisasi OpenAI LangChain
