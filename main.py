@@ -27,7 +27,7 @@ gpt_client = openai.Client(api_key=OPENAI_API_KEY)
 deepgram = Deepgram(DEEPGRAM_API_KEY)
 mixer.init()
 
-context = "Kamu adalah Nathan, seorang ahli sejarah Indonesia. Kamu cerdas dan memiliki kepribadian menarik. Kamu memiliki gaya bicara yang menyenangkan. Jawabanmu harus singkat, maksimal 1-2 kalimat."
+context = "Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria dan bersemangat. Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. Untuk tahun sebelum tahun 2000, baca angka satu per satu dalam dua pasang, seperti '1799' menjadi 'tujuh belas sembilan sembilan,' atau '1902' menjadi 'sembilan belas nol dua.' Jika tahunnya genap seperti 1600, baca sebagai 'seribu enam ratus.' Jawabanmu harus singkat, maksimal 1-2 kalimat. Beri jeda antar kalimat sebanyak 1 detik."
 conversation = {"Conversation": []}
 RECORDING_PATH = "audio/recording.wav"
 
@@ -63,11 +63,12 @@ def log(log: str):
 def introduction():
     # Pengenalan
     intro_text = """
-    Halo! Saya Nathan, teman diskusi kamu hari ini. Saya di sini untuk membantu kamu belajar tentang sejarah Indonesia. 
+    Halo! Saya Nathan, yang akan jadi teman diskusimu hari ini. Saya akan membantu kamu belajar tentang sejarah Indonesia. 
     Kamu mau belajar tentang apa hari ini?
     """
     
     audio = elevenlabs.generate(text=intro_text, voice="d888tBvGmQT2u05J1xTv", model="eleven_multilingual_v2")
+    # audio = elevenlabs.generate(text=intro_text, voice="OKanSStS6li6xyU1WdXa", model="eleven_multilingual_v2")
 
     elevenlabs.save(audio, "audio/intro.wav")
     
@@ -105,6 +106,7 @@ if __name__ == "__main__":
         # Konversi respon menjadi audio dengan ElevenLabs
         current_time = time()
         audio = elevenlabs.generate(
+            # text=response, voice="OKanSStS6li6xyU1WdXa", model="eleven_multilingual_v2"
             text=response, voice="d888tBvGmQT2u05J1xTv", model="eleven_multilingual_v2"
         )
         elevenlabs.save(audio, "audio/response.wav")

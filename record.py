@@ -58,7 +58,7 @@ def speech_to_text() -> None:
             return wav_buffer.getvalue()
 
     try:
-        print("Mendengarkan...")
+        # print("Mendengarkan...")
 
         chunk = audio_source.read(960)
         while chunk:
@@ -73,7 +73,7 @@ def speech_to_text() -> None:
                     wav_path = (wav_dir / time.strftime(wav_filename)).with_suffix(".wav")
                     wav_bytes = buffer_to_wav(audio_data)
                     wav_path.write_bytes(wav_bytes)
-                    print(f"Rekaman disimpan di: {wav_path}")
+                    # print(f"Rekaman disimpan di: {wav_path}")
                     break
             # Membaca chunk berikutnya
             chunk = audio_source.read(960)

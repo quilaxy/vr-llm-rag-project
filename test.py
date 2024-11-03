@@ -79,3 +79,22 @@
 
 # for voice in data['voices']:
 #   print(f"{voice['name']}; {voice['voice_id']}")
+
+
+# Cek kredensial google tts
+import os
+from google.cloud import texttospeech
+
+# Pastikan kredensial sudah disetel
+credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if not credentials_path:
+    print("GOOGLE_APPLICATION_CREDENTIALS tidak disetel.")
+else:
+    print(f"Path kredensial: {credentials_path}")
+
+# Uji akses ke Text-to-Speech API
+try:
+    client = texttospeech.TextToSpeechClient()
+    print("Kredensial berhasil dikenali dan akses ke Text-to-Speech API berhasil.")
+except Exception as e:
+    print(f"Terjadi kesalahan: {e}")
