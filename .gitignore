@@ -4,3 +4,4 @@ __pycache__/
 *.py[cod]
 service.json
 test.py
+test-sound.py

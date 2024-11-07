@@ -14,7 +14,7 @@ def speech_to_text() -> None:
     """
     recorder = WebRtcVadRecorder(
         vad_mode=3,  # Mode deteksi suara, 3 = paling sensitif
-        silence_seconds=4,  # Hentikan rekaman setelah 4 detik keheningan
+        silence_seconds=6,  # Hentikan rekaman setelah 4 detik keheningan
     )
     recorder.start()
 

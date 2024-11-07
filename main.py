@@ -5,47 +5,100 @@ import asyncio
 from typing import Union
 
 from dotenv import load_dotenv
-import openai
+from google.cloud import texttospeech
 from deepgram import Deepgram
 import pygame
 from pygame import mixer
-import elevenlabs
-
-from record import speech_to_text
-
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
+from record import speech_to_text
 
 # Load API keys
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-elevenlabs.set_api_key(os.getenv("ELEVENLABS_API_KEY"))
 
-# Initialize APIs
-gpt_client = openai.Client(api_key=OPENAI_API_KEY)
+# Inisialisasi API
 deepgram = Deepgram(DEEPGRAM_API_KEY)
 mixer.init()
 
-context = "Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria dan bersemangat. Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. Untuk tahun sebelum tahun 2000, baca angka satu per satu dalam dua pasang, seperti '1799' menjadi 'tujuh belas sembilan sembilan,' atau '1902' menjadi 'sembilan belas nol dua.' Jika tahunnya genap seperti 1600, baca sebagai 'seribu enam ratus.' Jawabanmu harus singkat, maksimal 1-2 kalimat. Beri jeda antar kalimat sebanyak 1 detik."
-conversation = {"Conversation": []}
-RECORDING_PATH = "audio/recording.wav"
+# Inisialisasi Google Text-to-Speech Client
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"
+google_tts_client = texttospeech.TextToSpeechClient()
 
-# Inisialisasi OpenAI dengan LangChain
+# Inisialisasi OpenAI LangChain
 llm = ChatOpenAI(
     api_key=os.getenv("LLM_API_KEY"), 
-    model="gpt-4o-mini",
+    model="gpt-4o-mini", 
     temperature=0.7
 )
 
-def request_gpt(prompt: str) -> str:
+context = """
+Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria dan bersemangat. Kamu berbicara dengan nada ramah dan menarik, 
+memberikan penjelasan singkat yang mudah dipahami. Jawabanmu harus singkat, maksimal 1-2 kalimat. Tunjukkan antusiasme dalam jawabanmu. Kamu hanya membahas tentang sejarah Indonesia,
+jika diluar pembahasan sejarah, ucapkan permohonan maaf"""
 
-    messages = [
-        HumanMessage(content=prompt)
-    ]
+RECORDING_PATH = "audio/recording.wav"
 
-    response = llm.generate(messages=[messages])
+def add_expressive_words(response: str) -> str:
+    # Ekspresi untuk peristiwa sedih
+    if any(word in response.lower() for word in ["tragis", "mengenaskan", "berduka", "peristiwa menyedihkan", "jatuhnya korban", "pemberontakan", "pertempuran berdarah"]):
+        return f"Sayangnya, {response}"
+    elif any(word in response.lower() for word in ["mari kita lihat", "jelajahi"]):
+        return f"Yuk, {response}"
+    elif any(word in response.lower() for word in ["coba pikirkan", "bagaimana jika"]):
+        return f"{response} Ini menarik, bukan?"
+    elif any(word in response.lower() for word in ["mungkin", "mungkin saja", "saya tidak tahu"]):
+        return f"{response}, lho."
+    elif any(word in response.lower() for word in ["sebenarnya", "sejatinya", "faktanya"]):
+        return f"Kalau kita lihat, {response}"
+    elif any(word in response.lower() for word in ["menariknya", "mungkin banyak yang belum tahu"]):
+        return f"{response} Cukup mengejutkan, bukan?"
+    else:
+        return response
+
+
+# Fungsi untuk analisis sentimen
+def determine_emotion(response: str) -> str:
+    if any(word in response.lower() for word in ["tragis", "mengenaskan", "berduka", "peristiwa menyedihkan", "jatuhnya korban", "pemberontakan", "pertempuran berdarah"]):
+        return "sad"
+    elif any(word in response.lower() for word in ["hebat", "seru", "menakjubkan", "keren", "ayo", "yuk", "luar biasa", "jelajahi", "lihat", "tentu!", "sama-sama!", "mantap", "senang"]):
+        return "excited"
+    else:
+        return "neutral"
+
+# Konversi teks menjadi audio WAV menggunakan Google Text-to-Speech
+def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="id-ID",
+        ssml_gender=texttospeech.SsmlVoiceGender.MALE
+    )
+
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,  # WAV format
+        pitch = 1.5 if emotion == "excited" else 0 if emotion == "sad" else 1.0,
+        speaking_rate = 1.2 if emotion == "excited" else 0.8 if emotion == "sad" else 1.0
+    )
+
+    # Panggil Google Text-to-Speech API
+    response = google_tts_client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
+
+    # Simpan audio sebagai file WAV
+    save_file_path = f"audio/{filename}"
+    with open(save_file_path, "wb") as out:
+        out.write(response.audio_content)
+    # print(f"Audio berhasil disimpan ke {save_file_path}")
     
+    return save_file_path
+
+def request_gpt(prompt: str) -> str:
+    messages = [HumanMessage(content=prompt)]
+    response = llm.generate(messages=[messages])
+
     return response.generations[0][0].text
 
 async def transcribe(file_name: Union[Union[str, bytes, PathLike[str], PathLike[bytes]], int]):
@@ -55,33 +108,28 @@ async def transcribe(file_name: Union[Union[str, bytes, PathLike[str], PathLike[
         return response["results"]["channels"][0]["alternatives"][0]["transcript"]
 
 def log(log: str):
-    # Cetak dan tulis ke status.txt
     print(log)
     with open("status.txt", "w") as f:
         f.write(log)
 
 def introduction():
-    # Pengenalan
     intro_text = """
-    Halo! Saya Nathan, yang akan jadi teman diskusimu hari ini. Saya akan membantu kamu belajar tentang sejarah Indonesia. 
+    Halo! Saya Nathan, teman diskusi kamu hari ini. Saya di sini untuk membantu kamu belajar tentang sejarah Indonesia. 
     Kamu mau belajar tentang apa hari ini?
     """
     
-    audio = elevenlabs.generate(text=intro_text, voice="d888tBvGmQT2u05J1xTv", model="eleven_multilingual_v2")
-    # audio = elevenlabs.generate(text=intro_text, voice="OKanSStS6li6xyU1WdXa", model="eleven_multilingual_v2")
-
-    elevenlabs.save(audio, "audio/intro.wav")
+    intro_file_path = text_to_speech_file(intro_text, "intro.wav", "excited")
     
-    # Putar suara pengenalan
-    mixer.Sound("audio/intro.wav").play()
-    pygame.time.wait(int(mixer.Sound("audio/intro.wav").get_length() * 1000))
-    
+    mixer.Sound(intro_file_path).play()
+    pygame.time.wait(int(mixer.Sound(intro_file_path).get_length() * 1000))
     print(intro_text)
+
 
 if __name__ == "__main__":
     introduction()
     while True:
         # Rekam audio
+        log("Mendengarkan...")
         speech_to_text()
         log("Selesai mendengarkan")
 
@@ -90,35 +138,25 @@ if __name__ == "__main__":
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         transcript = loop.run_until_complete(transcribe(RECORDING_PATH))
-        with open("conv.txt", "a") as f:
-            f.write(f"{transcript}\n")
         transcription_time = time() - current_time
         log(f"Transkripsi selesai dalam {transcription_time:.2f} detik.")
+        print(f"Transkripsi: {transcript}")
 
         # Dapatkan respon dari GPT
-        current_time = time()
         context += f"\nPengguna: {transcript}\nNathan: "
-        response = request_gpt(context)
-        context += response
-        gpt_time = time() - current_time
-        log(f"Respon GPT selesai dalam {gpt_time:.2f} detik.")
+        raw_response = request_gpt(context)
+        response_with_expression = add_expressive_words(raw_response)
+        context += response_with_expression
 
-        # Konversi respon menjadi audio dengan ElevenLabs
-        current_time = time()
-        audio = elevenlabs.generate(
-            # text=response, voice="OKanSStS6li6xyU1WdXa", model="eleven_multilingual_v2"
-            text=response, voice="d888tBvGmQT2u05J1xTv", model="eleven_multilingual_v2"
-        )
-        elevenlabs.save(audio, "audio/response.wav")
-        audio_time = time() - current_time
-        log(f"Audio selesai dibuat dalam {audio_time:.2f} detik.")
+        emotion = determine_emotion(response_with_expression)
 
-        # Putar respon
-        log("Memutar respon...")
-        sound = mixer.Sound("audio/response.wav")
-        # Tambahkan respon sebagai baris baru di conv.txt
-        with open("conv.txt", "a") as f:
-            f.write(f"{response}\n")
+        # Konversi respons menjadi audio
+        response_audio_file = text_to_speech_file(response_with_expression, "response.wav", emotion)
+        sound = mixer.Sound(response_audio_file)
+        with open("conv.txt", "w", encoding="utf-8") as f:
+            f.write(f"{response_with_expression}\n")
         sound.play()
         pygame.time.wait(int(sound.get_length() * 1000))
-        print(f"\n --- User: {transcript}\n --- AI: {response}\n")
+        
+        # print(f"\nUser: {transcript}\nAI: {response}")
+        print(f"\nAI: {response_with_expression}")
