@@ -13,8 +13,8 @@ def speech_to_text() -> None:
     Merekam audio sampai terdeteksi tidak ada suara dan menyimpannya dalam file WAV.
     """
     recorder = WebRtcVadRecorder(
-        vad_mode=3,  # Mode deteksi suara, 3 = paling sensitif
-        silence_seconds=6,  # Hentikan rekaman setelah 4 detik keheningan
+        vad_mode=3,  # Mode deteksi suara
+        silence_seconds=4,  # Hentikan rekaman setelah 4 detik keheningan
     )
     recorder.start()
 
