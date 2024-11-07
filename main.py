@@ -40,24 +40,6 @@ jika diluar pembahasan sejarah, ucapkan permohonan maaf"""
 
 RECORDING_PATH = "audio/recording.wav"
 
-def add_expressive_words(response: str) -> str:
-    # Ekspresi untuk peristiwa sedih
-    if any(word in response.lower() for word in ["tragis", "mengenaskan", "berduka", "peristiwa menyedihkan", "jatuhnya korban", "pemberontakan", "pertempuran berdarah"]):
-        return f"Sayangnya, {response}"
-    elif any(word in response.lower() for word in ["mari kita lihat", "jelajahi"]):
-        return f"Yuk, {response}"
-    elif any(word in response.lower() for word in ["coba pikirkan", "bagaimana jika"]):
-        return f"{response} Ini menarik, bukan?"
-    elif any(word in response.lower() for word in ["mungkin", "mungkin saja", "saya tidak tahu"]):
-        return f"{response}, lho."
-    elif any(word in response.lower() for word in ["sebenarnya", "sejatinya", "faktanya"]):
-        return f"Kalau kita lihat, {response}"
-    elif any(word in response.lower() for word in ["menariknya", "mungkin banyak yang belum tahu"]):
-        return f"{response} Cukup mengejutkan, bukan?"
-    else:
-        return response
-
-
 # Fungsi untuk analisis sentimen
 def determine_emotion(response: str) -> str:
     if any(word in response.lower() for word in ["tragis", "mengenaskan", "berduka", "peristiwa menyedihkan", "jatuhnya korban", "pemberontakan", "pertempuran berdarah"]):
@@ -69,7 +51,19 @@ def determine_emotion(response: str) -> str:
 
 # Konversi teks menjadi audio WAV menggunakan Google Text-to-Speech
 def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
-    synthesis_input = texttospeech.SynthesisInput(text=text)
+    ssml_text = f"""
+    <speak>
+        {(text.lower())
+            .replace(", kan", "<emphasis level='strong'><prosody pitch='+6st' rate='1.2'>kan?</prosody><break time='100ms'/>")
+            .replace(", lho", "<prosody pitch='+3st' rate='0.8'>lohh</prosody></emphasis><break time='100ms'/>")
+            .replace(", bukan", "<prosody pitch='+4st' rate='1.2'>bukan?</prosody><break time='100ms'/>")
+            .replace(", yuk", "<prosody pitch='+6st' rate='1.2'>yuk!</prosody><break time='100ms'/>")
+            .replace("yuk, ", "<prosody pitch='+6st' rate='1.2'>yuk</prosody><break time='100ms'/>")
+        }
+    </speak>
+    """
+
+    synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
 
     voice = texttospeech.VoiceSelectionParams(
         language_code="id-ID",
@@ -78,8 +72,8 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.LINEAR16,  # WAV format
-        pitch = 1.5 if emotion == "excited" else 0 if emotion == "sad" else 1.0,
-        speaking_rate = 1.2 if emotion == "excited" else 0.8 if emotion == "sad" else 1.0
+        pitch = 2.0 if emotion == "excited" else 0 if emotion == "sad" else 1.5,
+        speaking_rate = 1.2 if emotion == "excited" else 1.0 if emotion == "sad" else 1.1
     )
 
     # Panggil Google Text-to-Speech API
@@ -124,7 +118,6 @@ def introduction():
     pygame.time.wait(int(mixer.Sound(intro_file_path).get_length() * 1000))
     print(intro_text)
 
-
 if __name__ == "__main__":
     introduction()
     while True:
@@ -144,19 +137,18 @@ if __name__ == "__main__":
 
         # Dapatkan respon dari GPT
         context += f"\nPengguna: {transcript}\nNathan: "
-        raw_response = request_gpt(context)
-        response_with_expression = add_expressive_words(raw_response)
-        context += response_with_expression
+        response = request_gpt(context)
+        context += response
 
-        emotion = determine_emotion(response_with_expression)
+        emotion = determine_emotion(response)
 
         # Konversi respons menjadi audio
-        response_audio_file = text_to_speech_file(response_with_expression, "response.wav", emotion)
+        response_audio_file = text_to_speech_file(response, "response.wav", emotion)
         sound = mixer.Sound(response_audio_file)
         with open("conv.txt", "w", encoding="utf-8") as f:
-            f.write(f"{response_with_expression}\n")
+            f.write(f"{response}\n")
         sound.play()
         pygame.time.wait(int(sound.get_length() * 1000))
         
         # print(f"\nUser: {transcript}\nAI: {response}")
-        print(f"\nAI: {response_with_expression}")
+        print(f"\nAI: {response}")
