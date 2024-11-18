@@ -8,3 +8,4 @@ pydantic==2.9.2
 pygame==2.5.2
 python-dotenv==1.0.1
 rhasspy_silence==0.4.0
+uvicorn==0.32.0
