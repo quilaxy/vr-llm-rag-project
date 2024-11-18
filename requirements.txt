@@ -1,17 +1,10 @@
-# Voice-to-Voice LLM Dependencies
-python-dotenv==1.0.1
-openai==1.50.2
 deepgram-sdk==2.12.0
-pyaudio==0.2.14
-rhasspy-silence==0.4.0
-elevenlabs==0.2.27
+fastapi==0.115.5
+langchain==0.3.7
+langchain_openai==0.2.8
+protobuf==5.28.3
+PyAudio==0.2.14
+pydantic==2.9.2
 pygame==2.5.2
-taipy==3.0.0
-
-# RAG Dependencies
-flask==3.0.3
-langchain_community==0.3.1
-langchain_openai==0.2.1
-pypdf==5.0.0
-faiss-cpu==1.8.0.post1
-bs4==0.0.2
+python-dotenv==1.0.1
+rhasspy_silence==0.4.0
