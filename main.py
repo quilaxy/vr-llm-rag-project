@@ -150,6 +150,5 @@ async def speech_to_speech(file: UploadFile = File(...)):
     # return FileResponse(response_audio_path, media_type="audio/mpeg", filename="response.mp3")
     return StreamingResponse(
         open(response_audio_path, "rb"),
-        media_type="audio/mpeg",
-        headers={"Content-Disposition": 'attachment; filename="response.mp3"'}
+        media_type="audio/mpeg"
     )
