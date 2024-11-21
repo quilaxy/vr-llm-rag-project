@@ -12,7 +12,8 @@ from langchain.schema import HumanMessage
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"
 
 # Inisialisasi API
 deepgram = Deepgram(DEEPGRAM_API_KEY)
