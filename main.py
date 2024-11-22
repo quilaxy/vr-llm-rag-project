@@ -12,8 +12,8 @@ import asyncio
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
 
 
 # Inisialisasi API
@@ -163,6 +163,6 @@ def speech_to_speech():
         print(f"Error: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    port = int(os.getenv("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
