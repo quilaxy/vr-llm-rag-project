@@ -8,9 +8,10 @@ pydantic==2.9.2
 pygame==2.5.2
 python-dotenv==1.0.1
 rhasspy_silence==0.4.0
-uvicorn==0.32.0
+# uvicorn==0.32.0 #fast-api
 google-cloud-texttospeech==2.21.0
 python-multipart==0.0.6
 Flask==3.0.3
 Flask-Cors==4.0.2
 asyncio==3.4.3
+gunicorn==23.0.0 #flask
