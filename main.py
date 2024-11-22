@@ -6,6 +6,7 @@ from google.cloud import texttospeech
 from deepgram import Deepgram
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -52,7 +53,20 @@ def determine_emotion(response: str) -> str:
 
 # Fungsi untuk memproses teks ke audio
 def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
-    synthesis_input = texttospeech.SynthesisInput(text=text)
+    ssml_text = f"""
+    <speak>
+        {(text.lower())
+            .replace(", kan", "<emphasis level='strong'><prosody pitch='+6st' rate='1.2'>kan?</prosody><break time='100ms'/>")
+            .replace(", lho", "<prosody pitch='+3st' rate='0.8'>lohh</prosody></emphasis><break time='100ms'/>")
+            .replace(", bukan", "<prosody pitch='+4st' rate='1.2'>bukan?</prosody><break time='100ms'/>")
+            .replace(", yuk", "<prosody pitch='+6st' rate='1.2'>yuk!</prosody><break time='100ms'/>")
+            .replace(", ya", "<prosody pitch='+6st' rate='1.2'>ya!</prosody><break time='100ms'/>")
+            .replace("tentu!", "<prosody pitch='+2st' rate='1.2'>tentu</prosody><break time='400ms'/>")
+        }
+    </speak>
+    """
+
+    synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
 
     voice = texttospeech.VoiceSelectionParams(
         language_code="id-ID",
@@ -61,8 +75,8 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        pitch=2.0 if emotion == "excited" else 0 if emotion == "sad" else 1.5,
-        speaking_rate=1.2 if emotion == "excited" else 1.0 if emotion == "sad" else 1.1
+        pitch = 2.0 if emotion == "excited" else 0 if emotion == "sad" else 1.5,
+        speaking_rate = 1.2 if emotion == "excited" else 1.0 if emotion == "sad" else 1.1
     )
 
     response = google_tts_client.synthesize_speech(
@@ -72,7 +86,7 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
     save_file_path = os.path.join(AUDIO_DIR, filename)
     with open(save_file_path, "wb") as out:
         out.write(response.audio_content)
-
+    
     return save_file_path
 
 # Fungsi untuk meminta respons dari GPT
@@ -95,9 +109,16 @@ def home():
 @app.route("/introduction/", methods=["GET"])
 def introduction():
     intro_text = """
-    HALOO!!!
-    Saya Nathan, teman diskusi kamu hari ini. Saya di sini untuk membantu kamu belajar tentang sejarah Indonesia. 
-    Kamu mau belajar tentang apa hari ini?
+    <speak>
+        <prosody rate="1.2" pitch="+2st">
+            HALOO!!!
+        </prosody>
+        <break time="200ms"/> 
+        <prosody rate="1.2" pitch="+1.5st">
+            Saya Nathan, teman diskusi kamu hari ini. Saya di sini untuk membantu kamu belajar tentang sejarah Indonesia. 
+            Kamu mau belajar tentang apa hari ini?
+        </prosody>
+    </speak>
     """
     intro_file_path = text_to_speech_file(intro_text, "intro.mp3", "excited")
     return Response(
@@ -108,29 +129,40 @@ def introduction():
 
 @app.route("/speech/", methods=["POST"])
 def speech_to_speech():
-    file = request.files.get("file")
-    if not file:
-        return jsonify({"error": "File not found in request"}), 400
+    try:
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "File not found in request"}), 400
 
-    input_file_path = os.path.join(AUDIO_DIR, "recording.wav")
-    file.save(input_file_path)
+        input_file_path = os.path.join(AUDIO_DIR, "recording.wav")
+        file.save(input_file_path)
+        print(f"File saved: {input_file_path}")
 
-    # Transkripsi audio
-    transcript = transcribe_audio(input_file_path)
+        # Transkripsi audio
+        transcript = asyncio.run(transcribe_audio(input_file_path))
+        print(f"Transcript: {transcript}")
 
-    # Respons GPT
-    full_context = f"{context}\nPengguna: {transcript}\nNathan: "
-    response = request_gpt(full_context)
+        # Respons GPT
+        full_context = f"{context}\nPengguna: {transcript}\nNathan: "
+        print(f"Full Context: {full_context}")
+        response = request_gpt(full_context)
+        print(f"GPT Response: {response}")
 
-    # Tentukan emosi dan konversi ke audio
-    emotion = determine_emotion(response)
-    response_audio_path = text_to_speech_file(response, "response.mp3", emotion)
+        # Tentukan emosi dan konversi ke audio
+        emotion = determine_emotion(response)
+        print(f"Emotion detected: {emotion}")
+        response_audio_path = text_to_speech_file(response, "response.mp3", emotion)
+        print(f"Audio file created at: {response_audio_path}")
 
-    return Response(
-        open(response_audio_path, "rb"),
-        mimetype="audio/mpeg",
-        headers={"Content-Disposition": 'inline; filename="response.mp3"'}
-    )
+        return Response(
+            open(response_audio_path, "rb"),
+            mimetype="audio/mpeg",
+            headers={"Content-Disposition": 'inline; filename="response.mp3"'}
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": "Internal Server Error"}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
