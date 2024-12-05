@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response, jsonify, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 from google.cloud import texttospeech
@@ -12,8 +12,8 @@ import asyncio
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
 
 
 # Inisialisasi API
@@ -40,7 +40,7 @@ Tunjukkan antusiasme dalam jawabanmu. Jika topik yang diberikan di luar sejarah 
 
 # Inisialisasi Flask
 app = Flask(__name__)
-CORS(app)  # Tambahkan CORS agar bisa diakses dari browser
+CORS(app)
 
 # Fungsi untuk analisis emosi
 def determine_emotion(response: str) -> str:
@@ -121,11 +121,8 @@ def introduction():
     </speak>
     """
     intro_file_path = text_to_speech_file(intro_text, "intro.mp3", "excited")
-    return Response(
-        open(intro_file_path, "rb"),
-        mimetype="audio/mpeg",
-        headers={"Content-Disposition": 'inline; filename="intro.mp3"'}
-    )
+    
+    return send_file(intro_file_path, as_attachment=True)
 
 @app.route("/speech/", methods=["POST"])
 def speech_to_speech():
@@ -154,11 +151,13 @@ def speech_to_speech():
         response_audio_path = text_to_speech_file(response, "response.mp3", emotion)
         print(f"Audio file created at: {response_audio_path}")
 
-        return Response(
-            open(response_audio_path, "rb"),
-            mimetype="audio/mpeg",
-            headers={"Content-Disposition": 'inline; filename="response.mp3"'}
+        return send_file(
+            response_audio_path,
+            as_attachment=True,
+            download_name="response.mp3",
+            mimetype="audio/mpeg"
         )
+
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
