@@ -12,9 +12,8 @@ import asyncio
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
-
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
 
 # Inisialisasi API
 deepgram = Deepgram(DEEPGRAM_API_KEY)
@@ -29,6 +28,7 @@ llm = ChatOpenAI(
 
 # Direktori audio
 AUDIO_DIR = "audio"
+HISTORY_FILE = "conversation_history.txt"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Context awal
@@ -41,6 +41,23 @@ Tunjukkan antusiasme dalam jawabanmu. Jika topik yang diberikan di luar sejarah 
 # Inisialisasi Flask
 app = Flask(__name__)
 CORS(app)
+
+# Fungsi untuk menghapus riwayat percakapan
+def clear_history():
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        f.write("")
+
+# Fungsi untuk menambah riwayat percakapan
+def append_to_history(entry: str):
+    with open(HISTORY_FILE, "a", encoding="utf-8") as f:
+        f.write(entry + "\n")
+
+# Fungsi untuk membaca riwayat percakapan
+def read_history() -> str:
+    if not os.path.exists(HISTORY_FILE):
+        return ""
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        return f.read()
 
 # Fungsi untuk analisis emosi
 def determine_emotion(response: str) -> str:
@@ -93,7 +110,7 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 def request_gpt(prompt: str) -> str:
     messages = [HumanMessage(content=prompt)]
     response = llm.generate(messages=[messages])
-    return response.generations[0][0].text
+    return response.generations[0][0].text.strip()
 
 # Fungsi untuk transkripsi audio dengan Deepgram
 async def transcribe_audio(file_path: str) -> str:
@@ -106,7 +123,7 @@ async def transcribe_audio(file_path: str) -> str:
 def home():
     return jsonify({"message": "Server is running!"})
 
-@app.route("/introduction/", methods=["GET"])
+@app.route("/intro/", methods=["GET"])
 def introduction():
     intro_text = """
     <speak>
@@ -140,10 +157,15 @@ def speech_to_speech():
         print(f"Transcript: {transcript}")
 
         # Respons GPT
-        full_context = f"{context}\nPengguna: {transcript}\nNathan: "
+        conversation_history = read_history()
+        full_context = f"{conversation_history}\nPengguna: {transcript}\nNathan: "
         print(f"Full Context: {full_context}")
         response = request_gpt(full_context)
         print(f"GPT Response: {response}")
+
+        # Simpan riwayat percakapan
+        append_to_history(f"Pengguna: {transcript}")
+        append_to_history(f"Nathan: {response}")
 
         # Tentukan emosi dan konversi ke audio
         emotion = determine_emotion(response)
@@ -161,6 +183,14 @@ def speech_to_speech():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route("/clear/", methods=["POST"])
+def clear_history_route():
+    try:
+        clear_history()
+        return jsonify({"message": "Riwayat percakapan berhasil dihapus"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
