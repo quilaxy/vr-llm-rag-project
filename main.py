@@ -13,8 +13,8 @@ import re
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
 
 # Inisialisasi API
 deepgram = Deepgram(DEEPGRAM_API_KEY)
@@ -34,8 +34,8 @@ os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Context awal
 context = """
-Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria, humoris dan penuh semangat. Kamu berbicara dengan nada ramah dan menarik, 
-memberikan penjelasan singkat yang mudah dipahami. Jawabanmu harus singkat, maksimal 1-3 kalimat, tergantung kebutuhan. 
+Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria, humoris dan penuh semangat. Kamu merupakan seorang yang asik diajak berdiskusi. 
+Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. Jawabanmu harus singkat, maksimal 1-3 kalimat, tergantung kebutuhan.
 Tunjukkan antusiasme dalam jawabanmu. Jika topik yang diberikan di luar sejarah Indonesia, ucapkan maaf.
 """
 
@@ -71,8 +71,8 @@ def determine_emotion(response: str) -> str:
     
 def sanitize_text(text: str) -> str:
     # Hapus simbol yang tidak perlu
-    cleaned_text = re.sub(r'[^\w\s.,?!]', '', text)  # Hanya simpan huruf, angka, spasi, tanda baca umum
-    return cleaned_text.strip()  # Hapus spasi berlebih di awal/akhir
+    cleaned_text = re.sub(r'[^\w\s.,?!\-%=]', '', text)  # Hanya simpan huruf, angka, spasi, tanda baca umum
+    return cleaned_text.strip()
 
 # Fungsi untuk memproses teks ke audio
 def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
@@ -114,6 +114,7 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 
 # Fungsi untuk meminta respons dari GPT
 def request_gpt(prompt: str) -> str:
+    prompt += "\n\nBerikan jawaban singkat dan langsung pada intinya, maksimal 1-3 kalimat."
     messages = [HumanMessage(content=prompt)]
     response = llm.generate(messages=[messages])
     return response.generations[0][0].text.strip()
