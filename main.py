@@ -7,6 +7,7 @@ from deepgram import Deepgram
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 import asyncio
+import re
 
 # Load environment variables
 load_dotenv()
@@ -67,6 +68,11 @@ def determine_emotion(response: str) -> str:
         return "excited"
     else:
         return "neutral"
+    
+def sanitize_text(text: str) -> str:
+    # Hapus simbol yang tidak perlu
+    cleaned_text = re.sub(r'[^\w\s.,?!]', '', text)  # Hanya simpan huruf, angka, spasi, tanda baca umum
+    return cleaned_text.strip()  # Hapus spasi berlebih di awal/akhir
 
 # Fungsi untuk memproses teks ke audio
 def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
