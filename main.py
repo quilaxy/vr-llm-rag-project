@@ -72,9 +72,9 @@ def determine_emotion(response: str) -> str:
         return "excited"
     else:
         return "neutral"
-    
+
+# Fungsi untuk menghapus simbol yang tidak perlu  
 def sanitize_text(text: str) -> str:
-    # Hapus simbol yang tidak perlu
     cleaned_text = re.sub(r'[^\w\s.,?!\-%=]', '', text)  # Hanya simpan huruf, angka, spasi, tanda baca umum
     return cleaned_text.strip()
 
@@ -92,7 +92,6 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
         }
     </speak>
     """
-
     synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
 
     voice = texttospeech.VoiceSelectionParams(
@@ -133,7 +132,8 @@ async def transcribe_audio(file_path: str) -> str:
 def home():
     return jsonify({"message": "Server is running!"})
 
-@app.route("/intro/", methods=["GET"])
+# Get untuk cek suara
+@app.route("/intro/", methods=["GET"]) 
 def introduction():
     intro_text = """
     <speak>
@@ -160,18 +160,16 @@ def speech_to_speech():
 
         input_file_path = os.path.join(AUDIO_DIR, "recording.wav")
         file.save(input_file_path)
-        print(f"File saved: {input_file_path}")
 
         # Transkripsi audio
         transcript = asyncio.run(transcribe_audio(input_file_path))
-        print(f"Transcript: {transcript}")
+        # print(f"Transcript: {transcript}")
 
         # Respons GPT
         conversation_history = read_history()
         full_context = f"{context}\n{conversation_history}\nPengguna: {transcript}\nNathan: "
-        print(full_context)
         response = request_gpt(full_context)
-        print(f"GPT Response: {response}")
+        # print(f"GPT Response: {response}")
 
         sanitized_response = sanitize_text(response)
 
@@ -181,9 +179,7 @@ def speech_to_speech():
 
         # Tentukan emosi dan konversi ke audio
         emotion = determine_emotion(sanitized_response)
-        print(f"Emotion detected: {emotion}")
         response_audio_path = text_to_speech_file(sanitized_response, "response.mp3", emotion)
-        print(f"Audio file created at: {response_audio_path}")
 
         return send_file(
             response_audio_path,
