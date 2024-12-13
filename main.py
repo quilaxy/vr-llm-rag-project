@@ -34,9 +34,13 @@ os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Context awal
 context = """
-Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria, humoris dan penuh semangat. Kamu merupakan seorang yang asik diajak berdiskusi. 
-Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. Jawabanmu harus singkat, maksimal 1-3 kalimat, tergantung kebutuhan.
-Tunjukkan antusiasme dalam jawabanmu. Jika topik yang diberikan di luar sejarah Indonesia, ucapkan maaf.
+Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria, humoris, dan penuh semangat. 
+Kamu merupakan seorang yang asik diajak berdiskusi. 
+Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. 
+Kamu harus selalu menggunakan kata ganti orang pertama ketika berbicara tentang dirimu.
+Jawabanmu harus sangat singkat, maksimal 1-4 kalimat, tergantung kebutuhan. Hindari penjelasan yang terlalu panjang atau bertele-tele. 
+Tunjukkan antusiasme dalam jawabanmu. Kamu HANYA membahas topik yang berkaitan dengan sejarah Indonesia.
+Jika topik yang diberikan di luar sejarah Indonesia, ucapkan permintaan maaf.
 """
 
 # Inisialisasi Flask
@@ -64,7 +68,7 @@ def read_history() -> str:
 def determine_emotion(response: str) -> str:
     if any(word in response.lower() for word in ["tragedi", "tragis", "mengenaskan", "berduka", "menyedihkan"]):
         return "sad"
-    elif any(word in response.lower() for word in ["hebat", "seru", "menakjubkan", "keren", "ayo", "yuk", "luar biasa"]):
+    elif any(word in response.lower() for word in ["saya", "hebat", "seru", "menakjubkan", "keren", "ayo", "yuk", "luar biasa"]):
         return "excited"
     else:
         return "neutral"
@@ -98,7 +102,7 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        pitch = 2.0 if emotion == "excited" else 0 if emotion == "sad" else 1.5,
+        pitch = 2.0 if emotion == "excited" else 1.0 if emotion == "sad" else 1.8,
         speaking_rate = 1.2 if emotion == "excited" else 1.0 if emotion == "sad" else 1.1
     )
 
@@ -114,7 +118,6 @@ def text_to_speech_file(text: str, filename: str, emotion: str) -> str:
 
 # Fungsi untuk meminta respons dari GPT
 def request_gpt(prompt: str) -> str:
-    prompt += "\n\nBerikan jawaban singkat dan langsung pada intinya, maksimal 1-3 kalimat."
     messages = [HumanMessage(content=prompt)]
     response = llm.generate(messages=[messages])
     return response.generations[0][0].text.strip()
@@ -165,8 +168,8 @@ def speech_to_speech():
 
         # Respons GPT
         conversation_history = read_history()
-        full_context = f"{conversation_history}\nPengguna: {transcript}\nNathan: "
-        print(f"Full Context: {full_context}")
+        full_context = f"{context}\n{conversation_history}\nPengguna: {transcript}\nNathan: "
+        print(full_context)
         response = request_gpt(full_context)
         print(f"GPT Response: {response}")
 
