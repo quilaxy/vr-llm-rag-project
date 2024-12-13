@@ -169,14 +169,16 @@ def speech_to_speech():
         response = request_gpt(full_context)
         print(f"GPT Response: {response}")
 
+        sanitized_response = sanitize_text(response)
+
         # Simpan riwayat percakapan
         append_to_history(f"Pengguna: {transcript}")
-        append_to_history(f"Nathan: {response}")
+        append_to_history(f"Nathan: {sanitized_response}")
 
         # Tentukan emosi dan konversi ke audio
-        emotion = determine_emotion(response)
+        emotion = determine_emotion(sanitized_response)
         print(f"Emotion detected: {emotion}")
-        response_audio_path = text_to_speech_file(response, "response.mp3", emotion)
+        response_audio_path = text_to_speech_file(sanitized_response, "response.mp3", emotion)
         print(f"Audio file created at: {response_audio_path}")
 
         return send_file(
