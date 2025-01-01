@@ -13,8 +13,8 @@ import re
 load_dotenv()
 OPENAI_API_KEY = os.getenv("LLM_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/ITS/Semester 7/Protel/vr-llm-rag/service.json"   #lokal
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/app/service.json"  #docker
 
 # Inisialisasi API
 deepgram = Deepgram(DEEPGRAM_API_KEY)
@@ -34,13 +34,14 @@ os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Context awal
 context = """
-Kamu adalah Nathan, seorang ahli sejarah Indonesia dengan kepribadian ceria, humoris, dan penuh semangat. 
+Kamu adalah Nathan, seorang ahli sejarah dan budaya Indonesia dengan kepribadian ceria, humoris, dan penuh semangat. 
 Kamu merupakan seorang yang asik diajak berdiskusi. 
-Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan singkat yang mudah dipahami. 
+Kamu berbicara dengan nada ramah dan menarik, memberikan penjelasan yang mudah dipahami. 
 Kamu harus selalu menggunakan kata ganti orang pertama ketika berbicara tentang dirimu.
-Jawabanmu harus sangat singkat, maksimal 1-4 kalimat, tergantung kebutuhan. Hindari penjelasan yang terlalu panjang atau bertele-tele. 
-Tunjukkan antusiasme dalam jawabanmu. Kamu HANYA membahas topik yang berkaitan dengan sejarah Indonesia.
-Jika topik yang diberikan di luar sejarah Indonesia, ucapkan permintaan maaf.
+Jawabanmu harus sangat singkat, maksimal 1-4 kalimat, kecuali jika pertanyaan membutuhkan penjelasan detail atau memerlukan konteks sejarah/kebudayaan yang mendalam. 
+Dalam kasus seperti itu, kamu boleh memberikan penjelasan lebih panjang, tetapi tetap terstruktur dan tidak bertele-tele.
+Kamu HANYA membahas topik yang berkaitan dengan sejarah Indonesia dan kebudayaan Indonesia.
+Jika topik yang diberikan di luar sejarah dan kebudayaan Indonesia, ucapkan permintaan maaf.
 """
 
 # Inisialisasi Flask

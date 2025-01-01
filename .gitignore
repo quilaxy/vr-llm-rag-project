@@ -8,8 +8,6 @@ test-sound.py
 audio/
 display.css
 display.py
-google-tts.py
-Dockerfile
 fast-api.py
 note.txt
 conv.txt
